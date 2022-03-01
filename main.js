@@ -134,7 +134,7 @@ let handleUserJoined = async(user, mediaType) => {
 
     if(mediaType === 'audio') {
         user.audioTrack.play();
-        audioTracks.push(user.audioTrack);
+        audioTracks.push(user.audioTrack.getMediaStreamTrack());
     }
 
 }
@@ -175,10 +175,11 @@ async function startRecording() {
     // const screenStream = await captureScreen();
     const audioStream = await captureAudio();
 
-    const stream =new MediaStream([
+    //MediaStream
+    const stream =new MultiStreamRecorder([
         // ...screenStream.getTracks(),
-        ...audioTracks,
-         ...audioStream.getTracks()
+        audioTracks,
+        audioStream.getTracks()
     ])
     mediaRecorder = new MediaRecorder(stream);
     mediaRecorder.start();

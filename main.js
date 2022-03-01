@@ -175,7 +175,7 @@ async function startRecording() {
     // const screenStream = await captureScreen();
     const audioStream = await captureAudio();
 
-    const stream =new MediaStream([
+    const stream =new MultiStreamRecorder([
         // ...screenStream.getTracks(),
         ...audioTracks,
          ...audioStream.getTracks()

@@ -153,8 +153,7 @@ let handleUserJoined = async(user, mediaType) => {
 
     if(mediaType === 'audio') {
         user.audioTrack.play();
-        // ac.createMediaStreamSource(new MediaStream([t]))
-        // 
+        
         if(recording){
             sources.push(ac.createMediaStreamSource(new MediaStream([user.audioTrack.getMediaStreamTrack()])))
             sources[sources.length-1].connect(dest)

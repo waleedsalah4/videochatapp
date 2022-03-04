@@ -14,7 +14,6 @@ let sources=[];
 
 const dest = ac.createMediaStreamDestination();
 
-sources = audioTracks.map(t => ac.createMediaStreamSource(new MediaStream([t])));
 
 let localTracks= {
     audioTrack: null,
@@ -184,6 +183,7 @@ function startRecording(){
     // The destination will output one track of mixed audio.
     // const dest = ac.createMediaStreamDestination();
 
+    sources = audioTracks.map(t => ac.createMediaStreamSource(new MediaStream([t])));
     // Mixing
     sources.forEach(s => s.connect(dest));
 

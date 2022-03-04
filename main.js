@@ -6,13 +6,13 @@ let config = {
     uid: null,
     channel: 'videochatApp'
 }
-
+let recording = false;
 let audioTracks = []
 
-let ac = new AudioContext();
+let ac;
 let sources=[];
 
-const dest = ac.createMediaStreamDestination();
+let dest ;
 
 
 let localTracks= {
@@ -111,6 +111,8 @@ let joinStreams = async () => {
     localTracks.videoTrack.play(`stream-${config.uid}`)
     audioTracks.push(localTracks.audioTrack.getMediaStreamTrack()
         )
+    ac =new AudioContext()
+    // ac.createMediaStreamDestination();
     // sources.push(ac.createMediaStreamSource(new MediaStream([localTracks.audioTrack.getMediaStreamTrack()])))
     
     console.log("printing audio tracks from local user ===============================================================>", audioTracks)
@@ -147,8 +149,15 @@ let handleUserJoined = async(user, mediaType) => {
 
     if(mediaType === 'audio') {
         user.audioTrack.play();
-        audioTracks.push(user.audioTrack.getMediaStreamTrack());
-        // sources.push(ac.createMediaStreamSource(new MediaStream([user.audioTrack.getMediaStreamTrack()])))
+        // ac.createMediaStreamSource(new MediaStream([t]))
+        // 
+        if(recording){
+            sources.push(ac.createMediaStreamSource(new MediaStream([user.audioTrack.getMediaStreamTrack()])))
+            sources[sources.length-1].connect(dest)
+        } else{
+            audioTracks.push(user.audioTrack.getMediaStreamTrack());
+        }
+
 
         // console.log("printing audio tracks from user joined ================================================>", audioTracks)
     }
@@ -172,16 +181,14 @@ document.getElementById('stopRecord').addEventListener('click', () => {
 
 
 let chunks = [];
-// let ac = new AudioContext();
-//  let sources=[];
 
 function startRecording(){
-
+    recording = true
 // WebAudio MediaStream sources only use the first track.
     console.log('AudioTracks ======>',audioTracks)
 
     // The destination will output one track of mixed audio.
-    // const dest = ac.createMediaStreamDestination();
+    dest = ac.createMediaStreamDestination();
 
     sources = audioTracks.map(t => ac.createMediaStreamSource(new MediaStream([t])));
     // Mixing

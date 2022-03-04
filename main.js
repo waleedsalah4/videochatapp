@@ -6,14 +6,16 @@ let config = {
     uid: null,
     channel: 'videochatApp'
 }
-let recording = false;
-let audioTracks = []
 
-let ac;
+// for record
+let audioTracks = []
+let recording = false;
+
+let ac = new AudioContext();
 let sources=[];
 
 let dest ;
-
+//******************** */
 
 let localTracks= {
     audioTrack: null,
@@ -109,9 +111,11 @@ let joinStreams = async () => {
     document.getElementById('user-streams').insertAdjacentHTML('beforeend', videoPlayer)
 
     localTracks.videoTrack.play(`stream-${config.uid}`)
-    audioTracks.push(localTracks.audioTrack.getMediaStreamTrack()
-        )
-    ac =new AudioContext()
+    audioTracks.push(localTracks.audioTrack.getMediaStreamTrack())
+    if (ac.state === 'suspended') {
+        ac.resume();
+    }
+    // ac =new AudioContext()
     // ac.createMediaStreamDestination();
     // sources.push(ac.createMediaStreamSource(new MediaStream([localTracks.audioTrack.getMediaStreamTrack()])))
     

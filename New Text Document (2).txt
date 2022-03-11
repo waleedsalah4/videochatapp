@@ -1,85 +1,13 @@
-
-
-
 let client = AgoraRTC.createClient({mode: 'rtc', 'codec': "vp8"})
 
 let config = {
     appid: '26c0963a341c43b5b3d9d7d452689cc6',
-    token: '00626c0963a341c43b5b3d9d7d452689cc6IAAzfiEXPCn1Rr4FerHkO/jhzRBJA9sJ4INWSTfxaX+4h3TFnEwAAAAAEAAJCiqYt7UsYgEAAQC2tSxi',
+    token: '00626c0963a341c43b5b3d9d7d452689cc6IABJrxLQqyLBxe/u/4dp2mbVaZavx1paXC7FOohunhwsqnTFnEwAAAAAEAAD1/lO2lMjYgEAAQDYUyNi',
     uid: null,
     channel: 'videochatApp'
 }
 
-// for record
 let audioTracks = []
-let recording = false;
-
-let ac = new AudioContext();
-let ctx = new AudioContext();
-let sources=[];
-
-let dest ;
-//******************** */
-
-/**audio visaulizer */
-function audioVisualizers(audioSource, id){
-    //num of bars to display  audio
-    const NBR_OF_BARS = 50;
-    
-    // const ctx = new AudioContext();
-
-    // Create an audio source
-    // const audioSource = ctx.createMediaStreamSource(audio);
-
-    // Create an audio analyzer
-    const analayzer = ctx.createAnalyser();
-
-    // Connect the source, to the analyzer, and then back the the context's destination
-    audioSource.connect(analayzer);
-    audioSource.connect(ctx.destination);
-
-    // Print the analyze frequencies
-    const frequencyData = new Uint8Array(analayzer.frequencyBinCount);
-    analayzer.getByteFrequencyData(frequencyData);
-    console.log("frequencyData", frequencyData);
-
-
-    const visualizerContainer = document.querySelector(`#visualizer-container-${id}`)
-
-    for (let i=0; i < NBR_OF_BARS; i++ ){
-        const bar = document.createElement("div")
-        bar.setAttribute("id", "bar" + i);
-        bar.setAttribute('class', "visualizer-container__bar")
-        visualizerContainer.appendChild(bar)
-    }
-
-    //This function has the task to adjust the bar heights according to the frequency data
-    function renderFrame(){
-        // Update our frequency data array with the latest frequency data
-        analayzer.getByteFrequencyData(frequencyData)
-
-        for (let i=0; i < NBR_OF_BARS; i++ ){
-
-            const index = (i+10)*2;
-            const fd = frequencyData[index]
-            const bar = document.querySelector("#bar" + i);
-            if(!bar){
-                continue;
-            }
-            const barHeight = Math.max(4, fd || 0);
-            bar.style.height = barHeight + "px"
-        }
-
-        window.requestAnimationFrame(renderFrame)
-    }
-    renderFrame()
-
-    // setInterval(function(){
-    //     renderFrame();
-    // }, 1000)
-}
-
-
 
 let localTracks= {
     audioTrack: null,
@@ -145,10 +73,7 @@ document.getElementById('leave-btn').addEventListener('click',  async () => {
 })
 
 let handleUserLeft = async (user) => {
-    audioTracks=audioTracks.filter(audioTrack => audioTrack.uid !== user.uid)
-    console.log('from user left==============>' ,audioTracks)
     delete remoteTracks[user.uid]
-
     document.getElementById(`video-wrapper-${user.uid}`)
 } 
 
@@ -157,6 +82,8 @@ let joinStreams = async () => {
 
     client.on("user-published", handleUserJoined);
     client.on("user-left", handleUserLeft);
+    // client.on("user-published", handleUserJoined)
+    // client.on("user-left", handleUserLeft)
 
     [config.uid, localTracks.audioTrack, localTracks.videoTrack] = await Promise.all([
         client.join(config.appid, config.channel, config.token ||null, config.uid ||null),
@@ -168,28 +95,12 @@ let joinStreams = async () => {
         <div class="video-container" id="video-wrapper-${config.uid}">
             <p class="user-uid">${config.uid}</p>
             <div class="video-player player" id="stream-${config.uid}">
-            <div class="visualizer-container" id="visualizer-container-${config.uid}"></div>
         </div>
     `;
     document.getElementById('user-streams').insertAdjacentHTML('beforeend', videoPlayer)
 
     localTracks.videoTrack.play(`stream-${config.uid}`)
     audioTracks.push(localTracks.audioTrack.getMediaStreamTrack())
-    if (ac.state === 'suspended') {
-        ac.resume();
-    }
-    // ac =new AudioContext()
-    // ac.createMediaStreamDestination();
-    // sources.push(ac.createMediaStreamSource(new MediaStream([localTracks.audioTrack.getMediaStreamTrack()])))
-
-    //--------- for audio visualizer ------
-    
-    // let newMediaStram = new MediaStream(localTracks.audioTrack.getMediaStreamTrack())
-    audioVisualizers(ctx.createMediaStreamSource(new MediaStream([localTracks.audioTrack.getMediaStreamTrack()])), config.uid)
-    
-    //-----------------------------------------------------------
-
-    console.log("printing audio tracks from local user ===============================================================>", audioTracks)
     await client.publish([localTracks.audioTrack, localTracks.videoTrack])
     
 }
@@ -214,7 +125,6 @@ let handleUserJoined = async(user, mediaType) => {
             <div class="video-container" id="video-wrapper-${user.uid}">
                 <p class="user-uid">${user.uid}</p>
                 <div class="video-player player" id="stream-${user.uid}">
-                <div class="visualizer-container" id="visualizer-container-${user.uid}"></div>
             </div>
         `;
     
@@ -224,18 +134,7 @@ let handleUserJoined = async(user, mediaType) => {
 
     if(mediaType === 'audio') {
         user.audioTrack.play();
-        
-        // audioVisualizers(ctx.createMediaStreamSource(new MediaStream([user.audioTrack.getMediaStreamTrack()])), user.uid)
-        
-        if(recording){
-            sources.push(ac.createMediaStreamSource(new MediaStream([user.audioTrack.getMediaStreamTrack()])))
-            sources[sources.length-1].connect(dest)
-        } else{
-            audioTracks.push(user.audioTrack.getMediaStreamTrack());
-        }
-
-
-        // console.log("printing audio tracks from user joined ================================================>", audioTracks)
+        audioTracks.push(user.audioTrack.getMediaStreamTrack());
     }
 
 }
@@ -254,19 +153,16 @@ document.getElementById('stopRecord').addEventListener('click', () => {
     recorder.stop();
 })
 
-
-
 let chunks = [];
-
 function startRecording(){
-    recording = true
+    const ac = new AudioContext();
+
 // WebAudio MediaStream sources only use the first track.
-    console.log('AudioTracks ======>',audioTracks)
+    const sources = audioTracks.map(t => ac.createMediaStreamSource(new MediaStream([t])));
 
     // The destination will output one track of mixed audio.
-    dest = ac.createMediaStreamDestination();
+    const dest = ac.createMediaStreamDestination();
 
-    sources = audioTracks.map(t => ac.createMediaStreamSource(new MediaStream([t])));
     // Mixing
     sources.forEach(s => s.connect(dest));
 
@@ -295,3 +191,56 @@ function startRecording(){
 }
 
 
+
+/*
+var mediaRecorder;
+var chunks = [];
+// async function captureScreen(mediaContraints = {
+//     video: true
+// }) {
+//     const screenStream = await navigator.mediaDevices.getDisplayMedia(mediaContraints)
+//     return screenStream
+// }
+
+async function captureAudio(mediaContraints = {
+    video: false,
+    audio: true
+}) {
+    const audioStream = await navigator.mediaDevices.getUserMedia(mediaContraints)
+    return audioStream
+}
+
+async function startRecording() {
+    // const screenStream = await captureScreen();
+    const audioStream = await captureAudio();
+
+    //MediaStream
+    const stream =new MediaStream([
+        // ...screenStream.getTracks(),
+        ...audioTracks,
+        ...audioStream.getTracks()
+    ])
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.start();
+    mediaRecorder.onstop = function(e) {
+        var clipName = prompt("Enter a name for your recording")
+        stream.getTracks().forEach((track) => track.stop());
+        const blob = new Blob(chunks, {
+            type: 'video/mp4'
+        })
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none"
+        a.href = url;
+        a.download = clipName +".mp4"
+        document.body.appendChild(a)
+        a.click();
+        setTimeout(()=>{
+            document.body.removeChild(a)
+            window.URL.revokeObjectURL(url)
+        }, 100)
+    }
+    mediaRecorder.ondataavailable = function(e) {
+        chunks.push(e.data)
+    }
+}*/
